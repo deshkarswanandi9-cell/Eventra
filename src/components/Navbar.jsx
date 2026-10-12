@@ -100,7 +100,7 @@ export function Navbar({
           </div>
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs - Filtered strictly by Coordinator Role */}
         <nav style={{
           display: 'flex',
           alignItems: 'center',
@@ -110,6 +110,7 @@ export function Navbar({
           borderRadius: 'var(--radius-md)',
           border: '1px solid rgba(255, 255, 255, 0.05)'
         }}>
+          {/* Dashboard is visible to all coordinators */}
           <button 
             onClick={() => setActiveTab('dashboard')}
             className={`btn btn-sm ${activeTab === 'dashboard' ? 'btn-primary' : 'btn-secondary'}`}
@@ -119,15 +120,19 @@ export function Navbar({
             Dashboard
           </button>
 
-          <button 
-            onClick={() => setActiveTab('create-event')}
-            className={`btn btn-sm ${activeTab === 'create-event' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ border: 'none' }}
-          >
-            <PlusCircle size={15} />
-            Create Event
-          </button>
+          {/* Create Event is exclusive to Faculty Coordinators and Admin */}
+          {(currentUser.role === 'Faculty Coordinator' || currentUser.role === 'Admin') && (
+            <button 
+              onClick={() => setActiveTab('create-event')}
+              className={`btn btn-sm ${activeTab === 'create-event' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none' }}
+            >
+              <PlusCircle size={15} />
+              Create Event
+            </button>
+          )}
 
+          {/* Document Centre is accessible to all */}
           <button 
             onClick={() => setActiveTab('documents')}
             className={`btn btn-sm ${activeTab === 'documents' ? 'btn-primary' : 'btn-secondary'}`}
@@ -137,24 +142,31 @@ export function Navbar({
             Document Centre
           </button>
 
-          <button 
-            onClick={() => setActiveTab('tracker')}
-            className={`btn btn-sm ${activeTab === 'tracker' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ border: 'none' }}
-          >
-            <CheckSquare size={15} />
-            Tracker
-          </button>
+          {/* Tracker is for Activity Coordinator and Admin */}
+          {(currentUser.role === 'Activity Coordinator' || currentUser.role === 'Admin') && (
+            <button 
+              onClick={() => setActiveTab('tracker')}
+              className={`btn btn-sm ${activeTab === 'tracker' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none' }}
+            >
+              <CheckSquare size={15} />
+              Tracker
+            </button>
+          )}
 
-          <button 
-            onClick={() => setActiveTab('admin')}
-            className={`btn btn-sm ${activeTab === 'admin' ? 'btn-primary' : 'btn-secondary'}`}
-            style={{ border: 'none' }}
-          >
-            <ShieldCheck size={15} />
-            Admin Monitor
-          </button>
+          {/* Admin Monitor is strictly for Admin (Head of Department) */}
+          {currentUser.role === 'Admin' && (
+            <button 
+              onClick={() => setActiveTab('admin')}
+              className={`btn btn-sm ${activeTab === 'admin' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none' }}
+            >
+              <ShieldCheck size={15} />
+              Admin Monitor
+            </button>
+          )}
 
+          {/* Archive is visible to all */}
           <button 
             onClick={() => setActiveTab('archive')}
             className={`btn btn-sm ${activeTab === 'archive' ? 'btn-primary' : 'btn-secondary'}`}
@@ -165,7 +177,7 @@ export function Navbar({
           </button>
         </nav>
 
-        {/* Right Side: Role Selector & Notifications */}
+        {/* Right Side: Logged-in Profile Badge & Sign Out (No Role Switching) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {/* Notification Button */}
           <button 
@@ -197,152 +209,51 @@ export function Navbar({
             )}
           </button>
 
-          {/* Interactive Role Switcher */}
-          <div style={{ position: 'relative' }}>
-            <button 
-              onClick={() => setShowRoleDropdown(!showRoleDropdown)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.6rem',
-                background: '#151e30',
-                border: '1px solid var(--border-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.35rem 0.75rem',
-                cursor: 'pointer',
-                color: 'var(--text-main)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <img 
-                src={currentUser.avatar} 
-                alt={currentUser.name} 
-                style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
-              />
-              <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{currentUser.name.split(' ')[1] || currentUser.name}</div>
-                <div style={{ 
-                  fontSize: '0.65rem', 
-                  color: currentUser.role === 'Admin' ? '#f59e0b' : currentUser.role === 'Activity Coordinator' ? '#06b6d4' : '#818cf8',
-                  fontWeight: 600
-                }}>
-                  {currentUser.role}
-                </div>
-              </div>
-              <ChevronDown size={14} color="var(--text-muted)" />
-            </button>
-
-            {showRoleDropdown && (
-              <div style={{
-                position: 'absolute',
-                right: 0,
-                top: 'calc(100% + 8px)',
-                width: '260px',
-                background: '#131b2e',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: 'var(--radius-md)',
-                boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
-                zIndex: 100,
-                padding: '0.5rem',
-                animation: 'fadeIn 0.15s ease'
+          {/* Authenticated Coordinator Profile Info (Static Display - No Switcher) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.6rem',
+              background: '#151e30',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0.35rem 0.75rem'
+            }}
+          >
+            <img 
+              src={currentUser.avatar} 
+              alt={currentUser.name} 
+              style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }}
+            />
+            <div style={{ textAlign: 'left', lineHeight: 1.2 }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{currentUser.name}</div>
+              <div style={{ 
+                fontSize: '0.65rem', 
+                color: currentUser.role === 'Admin' ? '#f59e0b' : currentUser.role === 'Activity Coordinator' ? '#06b6d4' : '#818cf8',
+                fontWeight: 700
               }}>
-                <div style={{ 
-                  padding: '0.4rem 0.6rem', 
-                  fontSize: '0.72rem', 
-                  fontWeight: 700, 
-                  color: 'var(--text-subtle)',
-                  textTransform: 'uppercase',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
-                  marginBottom: '0.35rem'
-                }}>
-                  Switch Active Role Portal
-                </div>
-                {users.map(u => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      setCurrentUser(u);
-                      setShowRoleDropdown(false);
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.6rem',
-                      width: '100%',
-                      padding: '0.5rem 0.6rem',
-                      background: currentUser.id === u.id ? 'rgba(79, 70, 229, 0.2)' : 'transparent',
-                      border: 'none',
-                      borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer',
-                      color: 'var(--text-main)',
-                      textAlign: 'left',
-                      transition: 'background 0.15s'
-                    }}
-                    onMouseEnter={(e) => {
-                      if (currentUser.id !== u.id) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                      if (currentUser.id !== u.id) e.currentTarget.style.background = 'transparent';
-                    }}
-                  >
-                    <img 
-                      src={u.avatar} 
-                      alt={u.name} 
-                      style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} 
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{u.name}</div>
-                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                        {u.role}
-                      </div>
-                    </div>
-                    {currentUser.id === u.id && (
-                      <span style={{ fontSize: '0.7rem', color: '#818cf8', fontWeight: 700 }}>Active</span>
-                    )}
-                  </button>
-                ))}
-
-                <div style={{
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                  marginTop: '0.4rem',
-                  paddingTop: '0.4rem'
-                }}>
-                  <button
-                    onClick={() => {
-                      setShowRoleDropdown(false);
-                      onLogout();
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      width: '100%',
-                      padding: '0.5rem 0.6rem',
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.25)',
-                      borderRadius: 'var(--radius-sm)',
-                      cursor: 'pointer',
-                      color: '#f87171',
-                      fontSize: '0.785rem',
-                      fontWeight: 600
-                    }}
-                  >
-                    <LogOut size={14} />
-                    Sign Out of Portal
-                  </button>
-                </div>
+                {currentUser.role}
               </div>
-            )}
+            </div>
           </div>
 
-          {/* Quick Logout Button */}
+          {/* Explicit Sign Out Action Button */}
           <button 
             onClick={onLogout}
             className="btn btn-secondary btn-sm"
-            style={{ padding: '0.5rem', color: '#f87171' }}
-            title="Sign Out"
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.35rem', 
+              color: '#f87171',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              background: 'rgba(239, 68, 68, 0.08)'
+            }}
+            title="Sign Out of Portal"
           >
-            <LogOut size={16} />
+            <LogOut size={15} />
+            <span style={{ fontSize: '0.785rem' }}>Sign Out</span>
           </button>
         </div>
       </div>

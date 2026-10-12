@@ -87,8 +87,28 @@ export function App() {
     };
     setAuditLogs(prev => [log, ...prev]);
 
+    // Landing view per role
+    if (user.role === 'Activity Coordinator') {
+      setActiveTab('tracker');
+    } else {
+      setActiveTab('dashboard');
+    }
+
     showToast(`Welcome, ${user.name} (${user.role})!`);
   };
+
+  // Route protection: prevent coordinators from accessing pages outside their permissions
+  useEffect(() => {
+    if (currentUser.role === 'Faculty Coordinator') {
+      if (activeTab === 'admin' || activeTab === 'tracker') {
+        setActiveTab('dashboard');
+      }
+    } else if (currentUser.role === 'Activity Coordinator') {
+      if (activeTab === 'admin' || activeTab === 'create-event') {
+        setActiveTab('tracker');
+      }
+    }
+  }, [currentUser.role, activeTab]);
 
   const handleLogout = () => {
     setIsAuthenticated(false);

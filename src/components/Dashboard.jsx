@@ -78,58 +78,144 @@ export function Dashboard({
             </p>
           </div>
 
-          {/* Quick Primary Action */}
+          {/* Quick Primary Actions Tailored to Role */}
           <div style={{ display: 'flex', gap: '0.75rem' }}>
-            <button 
-              onClick={() => onNavigate('create-event')}
-              className="btn btn-primary btn-lg"
-            >
-              <PlusCircle size={18} />
-              Create New Event
-            </button>
-            <button 
-              onClick={() => onNavigate('documents')}
-              className="btn btn-secondary btn-lg"
-            >
-              <FileText size={18} />
-              Document Centre
-            </button>
+            {isFaculty && (
+              <>
+                <button 
+                  onClick={() => onNavigate('create-event')}
+                  className="btn btn-primary btn-lg"
+                >
+                  <PlusCircle size={18} />
+                  Create New Event
+                </button>
+                <button 
+                  onClick={() => onNavigate('documents')}
+                  className="btn btn-secondary btn-lg"
+                >
+                  <FileText size={18} />
+                  My Documents
+                </button>
+              </>
+            )}
+
+            {isActivityCoord && (
+              <>
+                <button 
+                  onClick={() => onNavigate('tracker')}
+                  className="btn btn-primary btn-lg"
+                  style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%)' }}
+                >
+                  <CheckSquare size={18} />
+                  Open Event Tracker
+                </button>
+                <button 
+                  onClick={() => onNavigate('documents')}
+                  className="btn btn-secondary btn-lg"
+                >
+                  <FileText size={18} />
+                  Inspect Documents
+                </button>
+              </>
+            )}
+
+            {isAdmin && (
+              <>
+                <button 
+                  onClick={() => onNavigate('admin')}
+                  className="btn btn-primary btn-lg"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)' }}
+                >
+                  <ShieldCheck size={18} />
+                  Admin Approvals ({pendingApprovalsCount})
+                </button>
+                <button 
+                  onClick={() => onNavigate('tracker')}
+                  className="btn btn-secondary btn-lg"
+                >
+                  <CheckSquare size={18} />
+                  Department Tracker
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       {/* Role-Specific Metric Cards */}
       <div className="grid-4">
-        <div className="card card-hover" onClick={() => onNavigate('tracker')} style={{ cursor: 'pointer' }}>
+        {/* Card 1 */}
+        <div 
+          className="card card-hover" 
+          onClick={() => isActivityCoord || isAdmin ? onNavigate('tracker') : onNavigate('documents')} 
+          style={{ cursor: 'pointer' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department Events</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              {isFaculty ? 'My Activities' : 'Department Events'}
+            </span>
             <Calendar size={18} color="#818cf8" />
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#ffffff' }}>{events.length}</div>
-          <div style={{ fontSize: '0.75rem', color: '#818cf8', marginTop: '0.25rem' }}>View full tracker →</div>
-        </div>
-
-        <div className="card card-hover" onClick={() => onNavigate('admin')} style={{ cursor: 'pointer' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pending Approvals</span>
-            <Clock size={18} color="#f59e0b" />
+          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#ffffff' }}>
+            {myEvents.length}
           </div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#f59e0b' }}>{pendingApprovalsCount}</div>
-          <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '0.25rem' }}>Action required in Admin →</div>
+          <div style={{ fontSize: '0.75rem', color: '#818cf8', marginTop: '0.25rem' }}>
+            {isFaculty ? 'View my documents →' : 'View full tracker →'}
+          </div>
         </div>
 
-        <div className="card card-hover" onClick={() => onNavigate('tracker')} style={{ cursor: 'pointer' }}>
+        {/* Card 2 */}
+        {isAdmin ? (
+          <div className="card card-hover" onClick={() => onNavigate('admin')} style={{ cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pending Approvals</span>
+              <Clock size={18} color="#f59e0b" />
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#f59e0b' }}>{pendingApprovalsCount}</div>
+            <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '0.25rem' }}>Review & Sign off →</div>
+          </div>
+        ) : isActivityCoord ? (
+          <div className="card card-hover" onClick={() => onNavigate('tracker')} style={{ cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Pending Submissions</span>
+              <Clock size={18} color="#06b6d4" />
+            </div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#06b6d4' }}>
+              {events.filter(e => Object.values(e.documents || {}).some(d => !d.generated || d.status.includes('Draft'))).length}
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#67e8f9', marginTop: '0.25rem' }}>Track checklist status →</div>
+          </div>
+        ) : (
+          <div className="card card-hover" onClick={() => onNavigate('create-event')} style={{ cursor: 'pointer' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Quick Action</span>
+              <PlusCircle size={18} color="#10b981" />
+            </div>
+            <div style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '0.6rem', color: '#10b981' }}>New Activity</div>
+            <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '0.25rem' }}>Auto-generate 5 docs →</div>
+          </div>
+        )}
+
+        {/* Card 3 */}
+        <div 
+          className="card card-hover" 
+          onClick={() => isActivityCoord || isAdmin ? onNavigate('tracker') : onNavigate('documents')} 
+          style={{ cursor: 'pointer' }}
+        >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Overdue Documents</span>
             <AlertTriangle size={18} color="#ef4444" />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#ef4444' }}>{overdueEvents.length}</div>
-          <div style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '0.25rem' }}>Requires coordinator reminder →</div>
+          <div style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '0.25rem' }}>
+            {isActivityCoord ? 'Dispatch reminders →' : 'Action required →'}
+          </div>
         </div>
 
+        {/* Card 4 */}
         <div className="card card-hover" onClick={() => onNavigate('archive')} style={{ cursor: 'pointer' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Archived Dossiers</span>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Department Archive</span>
             <Award size={18} color="#10b981" />
           </div>
           <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.4rem', color: '#10b981' }}>
