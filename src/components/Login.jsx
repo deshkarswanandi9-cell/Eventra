@@ -12,64 +12,169 @@ import {
   Sparkles, 
   CheckCircle2, 
   AlertCircle,
-  KeyRound,
-  Building2,
-  FileCheck2
+  GraduationCap,
+  FileCheck2,
+  Database,
+  UserPlus,
+  LogIn,
+  Briefcase
 } from 'lucide-react';
+import { authService } from '../services/authService';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 export function Login({ users, onLogin }) {
-  const [selectedRole, setSelectedRole] = useState('Admin'); // Admin, Activity Coordinator, Faculty Coordinator
-  const [email, setEmail] = useState('v.chitragar@engg.edu');
-  const [password, setPassword] = useState('admin@eventra');
+  const [authMode, setAuthMode] = useState('signin'); // 'signin' or 'register'
+  const [selectedRole, setSelectedRole] = useState('Faculty Coordinator'); // Faculty Coordinator, Activity Coordinator, Admin
+  
+  // Sign In State
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // Register / Activation State
+  const [regFullName, setRegFullName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [regDesignation, setRegDesignation] = useState('Assistant Professor');
+  const [regDepartment, setRegDepartment] = useState('Computer Engineering');
+
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showDemoCredentials, setShowDemoCredentials] = useState(false);
 
-  // When selecting a role filter, auto-suggest the first user of that role
-  const handleRoleTabClick = (role) => {
-    setSelectedRole(role);
-    setError('');
-    const matchedUser = users.find(u => u.role === role);
-    if (matchedUser) {
-      setEmail(matchedUser.email);
-      setPassword(matchedUser.password || 'faculty@eventra');
+  const roleDescriptions = {
+    'Faculty Coordinator': {
+      title: 'Faculty Coordinator Portal',
+      badge: 'Activity Creator',
+      color: 'var(--brand-maroon)',
+      desc: 'Single-source event creation, auto-generation of 5-document suites (flyer, invitation, attendance, report, appreciation), and student roster attendance tracking.',
+      icon: UserCheck
+    },
+    'Activity Coordinator': {
+      title: 'Activity Coordinator Workspace',
+      badge: 'Lifecycle Tracking',
+      color: '#0284c7',
+      desc: 'Department-wide activity monitoring, missing document inspection, automated follow-up reminders, and checklist milestone enforcement.',
+      icon: CheckSquare
+    },
+    'Admin': {
+      title: 'Department Head & Admin Portal',
+      badge: 'Executive Governance',
+      color: '#d97706',
+      desc: 'Departmental activity approval, accreditation dossier sign-offs (NBA/NAAC), audit trails, user role governance, and institutional CSV export.',
+      icon: ShieldCheck
     }
   };
 
-  const handleQuickLogin = (user) => {
-    setEmail(user.email);
-    setPassword(user.password || 'faculty@eventra');
-    setSelectedRole(user.role);
-    setError('');
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onLogin(user);
-    }, 400);
-  };
-
-  const handleSubmit = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      if (isSupabaseConfigured) {
+        const { profile, user } = await authService.signIn(email, password);
+        setIsLoading(false);
+        onLogin(profile || {
+          id: user.id,
+          name: user.email.split('@')[0],
+          role: selectedRole,
+          email: user.email,
+        });
+      } else {
+        setTimeout(() => {
+          setIsLoading(false);
+          const found = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
+          if (!found) {
+            setError('No coordinator found with this institutional email. Click "Activate / Register Account" to create your login.');
+            return;
+          }
+
+          if (found.password && password !== found.password && password !== 'eventra123') {
+            setError('Invalid password. Please check your credentials.');
+            return;
+          }
+
+          onLogin(found);
+        }, 400);
+      }
+    } catch (err) {
       setIsLoading(false);
-      const user = users.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-      if (!user) {
-        setError('No coordinator found with this institutional email address.');
-        return;
+      const msg = err.message || '';
+      if (msg.includes('Invalid login credentials') || msg.includes('not found')) {
+        setError('Account not registered in Supabase yet. Please switch to "Activate / Register Account" to create your institutional login in Supabase.');
+      } else {
+        setError(msg || 'Authentication failed. Please verify institutional credentials.');
       }
-
-      // Check password (accept matched password or universal demo password)
-      if (user.password && password !== user.password && password !== 'eventra123') {
-        setError(`Incorrect password. (Tip: Demo password for ${user.name} is "${user.password}")`);
-        return;
-      }
-
-      onLogin(user);
-    }, 450);
+    }
   };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (regPassword !== regConfirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+    if (regPassword.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      if (isSupabaseConfigured) {
+        const { user, profile } = await authService.signUp(regEmail, regPassword, {
+          name: regFullName,
+          role: selectedRole,
+          department: regDepartment,
+          designation: regDesignation
+        });
+
+        setIsLoading(false);
+        setSuccessMsg(`Account created for ${regFullName}! You can now sign in.`);
+        setEmail(regEmail);
+        setPassword(regPassword);
+        setAuthMode('signin');
+      } else {
+        setTimeout(() => {
+          setIsLoading(false);
+          const newUser = {
+            id: `usr_${Date.now()}`,
+            name: regFullName,
+            email: regEmail,
+            role: selectedRole,
+            department: regDepartment,
+            designation: regDesignation,
+            avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+            password: regPassword
+          };
+          users.push(newUser);
+          setSuccessMsg(`Local account activated for ${regFullName}! Please sign in.`);
+          setEmail(regEmail);
+          setPassword(regPassword);
+          setAuthMode('signin');
+        }, 500);
+      }
+    } catch (err) {
+      setIsLoading(false);
+      setError(err.message || 'Registration failed. Check if user already exists.');
+    }
+  };
+
+  const quickFill = (user) => {
+    setEmail(user.email);
+    setPassword('eventra123');
+    setSelectedRole(user.role);
+    setError('');
+  };
+
+  const CurrentRoleIcon = roleDescriptions[selectedRole].icon;
 
   return (
     <div style={{
@@ -77,395 +182,439 @@ export function Login({ users, onLogin }) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      padding: '2rem 1.5rem',
-      position: 'relative',
-      background: 'radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.15) 0%, transparent 50%), radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.12) 0%, transparent 50%), #0b0f19'
+      background: 'var(--bg-app)',
+      padding: '2rem 1.25rem'
     }}>
-      {/* Container Box */}
       <div style={{
         width: '100%',
-        maxWidth: '1100px',
-        display: 'grid',
-        gridTemplateColumns: '1fr 1.15fr',
-        borderRadius: '24px',
-        overflow: 'hidden',
+        maxWidth: '520px',
+        background: '#ffffff',
         border: '1px solid var(--border-subtle)',
-        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.75)',
-        background: '#111827'
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.04)',
+        overflow: 'hidden'
       }}>
-        {/* Left Side: University & Department Branding Presentation */}
+        {/* Institutional Header Banner (Reference Maroon Style) */}
         <div style={{
-          background: 'linear-gradient(145deg, #182238 0%, #0f172a 100%)',
-          padding: '3rem 2.5rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          borderRight: '1px solid var(--border-subtle)',
+          background: 'linear-gradient(135deg, var(--brand-maroon) 0%, var(--brand-maroon-dark) 100%)',
+          padding: '2rem 2rem 1.75rem 2rem',
+          color: '#ffffff',
+          textAlign: 'center',
           position: 'relative'
         }}>
-          <div>
-            {/* Brand Logo */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-              <div style={{
-                width: '46px',
-                height: '46px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 0 20px rgba(79, 70, 229, 0.5)'
-              }}>
-                <Layers size={26} color="#ffffff" />
-              </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ 
-                    fontFamily: 'var(--font-heading)', 
-                    fontWeight: 800, 
-                    fontSize: '1.45rem',
-                    letterSpacing: '-0.02em',
-                    background: 'linear-gradient(90deg, #ffffff, #c7d2fe)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent'
-                  }}>
-                    EVENTRA
-                  </span>
-                  <span style={{
-                    fontSize: '0.65rem',
-                    background: 'rgba(79, 70, 229, 0.3)',
-                    color: '#a5b4fc',
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '4px',
-                    fontWeight: 700,
-                    border: '1px solid rgba(99, 102, 241, 0.4)'
-                  }}>
-                    CE DEPT
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  College of Engineering & Technology
-                </div>
-              </div>
-            </div>
-
-            {/* Title & Tagline */}
-            <h1 style={{ fontSize: '1.85rem', fontWeight: 800, lineHeight: 1.3, color: '#ffffff', marginBottom: '1rem' }}>
-              College Activity & Documentation Automation System
-            </h1>
-            <p style={{ fontSize: '0.875rem', color: '#94a3b8', lineHeight: 1.6, marginBottom: '2rem' }}>
-              A centralized departmental platform that eliminates manual paperwork. Enter event details once to generate official flyers, invitations, attendance sheets, accredited reports, and appreciation letters.
-            </p>
-
-            {/* Core Value Pillars */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: 'rgba(16, 185, 129, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <CheckCircle2 size={16} color="#10b981" />
-                </div>
-                <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
-                  <strong>Single-Source Data Entry:</strong> Eliminates duplicate typing
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: 'rgba(99, 102, 241, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <FileCheck2 size={16} color="#818cf8" />
-                </div>
-                <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
-                  <strong>Auto 5-Document Suite:</strong> High-res flyers, letters & reports
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  background: 'rgba(6, 182, 212, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <ShieldCheck size={16} color="#06b6d4" />
-                </div>
-                <span style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>
-                  <strong>NBA & NAAC Compliant:</strong> Outcome mappings & digital dossiers
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Accreditation Note */}
           <div style={{
-            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-            paddingTop: '1.25rem',
-            marginTop: '2rem',
-            fontSize: '0.75rem',
-            color: 'var(--text-subtle)',
+            width: '54px',
+            height: '54px',
+            borderRadius: '12px',
+            background: 'rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(8px)',
+            border: '1px solid rgba(255, 255, 255, 0.3)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between'
+            justifyContent: 'center',
+            margin: '0 auto 0.85rem auto',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
+          }}>
+            <GraduationCap size={30} color="#ffffff" />
+          </div>
+
+          <h1 style={{ 
+            fontSize: '1.65rem', 
+            fontWeight: 800, 
+            letterSpacing: '-0.02em', 
+            color: '#ffffff',
+            marginBottom: '0.25rem'
+          }}>
+            EVENTRA
+          </h1>
+
+          <div style={{
+            fontSize: '0.8125rem',
+            fontWeight: 500,
+            color: 'rgba(255, 255, 255, 0.9)',
+            letterSpacing: '0.01em'
+          }}>
+            College Activity & Event Documentation Automation System
+          </div>
+
+          <div style={{
+            marginTop: '0.65rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.4rem',
+            fontSize: '0.72rem',
+            background: 'rgba(0, 0, 0, 0.2)',
+            padding: '0.2rem 0.65rem',
+            borderRadius: '9999px',
+            border: '1px solid rgba(255, 255, 255, 0.2)'
           }}>
             <span>Department of Computer Engineering</span>
-            <span style={{ color: '#818cf8', fontWeight: 600 }}>v2.4 Accredited</span>
+            <span>•</span>
+            <span style={{ color: 'var(--brand-mustard)', fontWeight: 600 }}>NBA & NAAC Compliant</span>
           </div>
         </div>
 
-        {/* Right Side: Coordinator Sign-In Interface */}
-        <div style={{
-          padding: '3rem 2.5rem',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center'
-        }}>
-          <div style={{ marginBottom: '1.75rem' }}>
-            <span style={{
-              fontSize: '0.75rem',
-              fontWeight: 700,
-              color: '#818cf8',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em'
-            }}>
-              Official Faculty & Coordinator Portal
-            </span>
-            <h2 style={{ fontSize: '1.65rem', fontWeight: 700, color: '#ffffff', marginTop: '0.2rem' }}>
-              Sign In to Your Workspace
-            </h2>
-            <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-              Select your coordinator role or enter your institutional credentials to access your dashboard.
-            </p>
-          </div>
-
-          {/* Role Filter Tabs */}
+        {/* Content Body */}
+        <div style={{ padding: '1.75rem 2rem 2rem 2rem' }}>
+          {/* Mode Switcher Tabs */}
           <div style={{
-            display: 'flex',
-            background: '#0c1322',
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '0.5rem',
+            background: '#f1f5f9',
             padding: '0.3rem',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-subtle)',
-            marginBottom: '1.5rem',
-            gap: '0.35rem'
+            borderRadius: '8px',
+            marginBottom: '1.5rem'
           }}>
-            {[
-              { role: 'Admin', label: 'Admin (HOD)', icon: ShieldCheck, color: '#f59e0b' },
-              { role: 'Activity Coordinator', label: 'Activity Coord', icon: CheckSquare, color: '#06b6d4' },
-              { role: 'Faculty Coordinator', label: 'Faculty Coord', icon: UserCheck, color: '#818cf8' }
-            ].map(tab => {
-              const Icon = tab.icon;
-              const isActive = selectedRole === tab.role;
-              return (
-                <button
-                  key={tab.role}
-                  type="button"
-                  onClick={() => handleRoleTabClick(tab.role)}
-                  style={{
-                    flex: 1,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.4rem',
-                    padding: '0.55rem 0.65rem',
-                    borderRadius: 'var(--radius-sm)',
-                    border: 'none',
-                    background: isActive ? 'rgba(79, 70, 229, 0.25)' : 'transparent',
-                    color: isActive ? '#ffffff' : 'var(--text-muted)',
-                    fontWeight: isActive ? 700 : 500,
-                    fontSize: '0.785rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <Icon size={14} color={isActive ? tab.color : 'var(--text-subtle)'} />
-                  {tab.label}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => { setAuthMode('signin'); setError(''); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+                padding: '0.55rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                background: authMode === 'signin' ? '#ffffff' : 'transparent',
+                color: authMode === 'signin' ? 'var(--brand-maroon)' : '#64748b',
+                boxShadow: authMode === 'signin' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <LogIn size={15} />
+              Sign In
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { setAuthMode('register'); setError(''); }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.4rem',
+                padding: '0.55rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                border: 'none',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                background: authMode === 'register' ? '#ffffff' : 'transparent',
+                color: authMode === 'register' ? 'var(--brand-maroon)' : '#64748b',
+                boxShadow: authMode === 'register' ? '0 1px 3px rgba(0, 0, 0, 0.08)' : 'none',
+                transition: 'all 0.15s ease'
+              }}
+            >
+              <UserPlus size={15} />
+              Register / Activate
+            </button>
           </div>
 
-          {/* Error Banner */}
+          {/* Role Selection Tabs */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label className="form-label" style={{ marginBottom: '0.5rem' }}>
+              Select Coordinator Role:
+            </label>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, 1fr)',
+              gap: '0.5rem'
+            }}>
+              {Object.keys(roleDescriptions).map(roleKey => {
+                const isSelected = selectedRole === roleKey;
+                return (
+                  <button
+                    key={roleKey}
+                    type="button"
+                    onClick={() => setSelectedRole(roleKey)}
+                    style={{
+                      padding: '0.65rem 0.5rem',
+                      borderRadius: '8px',
+                      border: `1.5px solid ${isSelected ? 'var(--brand-maroon)' : '#e2e8f0'}`,
+                      background: isSelected ? 'var(--brand-maroon-light)' : '#ffffff',
+                      color: isSelected ? 'var(--brand-maroon)' : '#475569',
+                      fontSize: '0.785rem',
+                      fontWeight: isSelected ? 700 : 500,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      lineHeight: 1.25,
+                      transition: 'all 0.15s ease'
+                    }}
+                  >
+                    {roleKey === 'Faculty Coordinator' ? 'Faculty' :
+                     roleKey === 'Activity Coordinator' ? 'Activity' : 'HOD / Admin'}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Role Context Helper Banner */}
+            <div style={{
+              marginTop: '0.65rem',
+              padding: '0.65rem 0.85rem',
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              borderRadius: '6px',
+              fontSize: '0.75rem',
+              color: '#475569',
+              lineHeight: 1.4,
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem'
+            }}>
+              <CurrentRoleIcon size={16} color="var(--brand-maroon)" style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong style={{ color: '#1e293b' }}>{roleDescriptions[selectedRole].title}</strong>: {roleDescriptions[selectedRole].desc}
+              </div>
+            </div>
+          </div>
+
+          {/* Error & Success Messages */}
           {error && (
             <div style={{
-              background: 'rgba(239, 68, 68, 0.12)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.75rem 1rem',
-              color: '#f87171',
-              fontSize: '0.8rem',
+              padding: '0.75rem 0.9rem',
+              background: 'var(--danger-bg)',
+              border: '1px solid var(--danger-border)',
+              borderRadius: '6px',
+              color: 'var(--danger-text)',
+              fontSize: '0.8125rem',
+              marginBottom: '1.25rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.6rem',
-              marginBottom: '1.25rem'
+              gap: '0.5rem'
             }}>
-              <AlertCircle size={16} />
-              <span>{error}</span>
+              <AlertCircle size={16} style={{ flexShrink: 0 }} />
+              <div>{error}</div>
             </div>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">College Email / Faculty ID</label>
-              <div style={{ position: 'relative' }}>
-                <Mail size={16} color="var(--text-subtle)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input 
-                  type="email" 
-                  className="form-input" 
-                  style={{ paddingLeft: '38px' }}
-                  placeholder="name@engg.edu"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
-                <span style={{ fontSize: '0.75rem', color: '#818cf8', cursor: 'pointer' }} onClick={() => setError('Contact the IT department or use one of the quick coordinator sign-in buttons below.')}>
-                  Forgot Password?
-                </span>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <Lock size={16} color="var(--text-subtle)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  className="form-input" 
-                  style={{ paddingLeft: '38px', paddingRight: '38px' }}
-                  placeholder="••••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: 'var(--text-subtle)',
-                    cursor: 'pointer',
-                    padding: 0
-                  }}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Remember Me */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                <input type="checkbox" defaultChecked /> Remember on this workstation
-              </label>
-            </div>
-
-            {/* Submit Action */}
-            <button 
-              type="submit" 
-              className="btn btn-primary btn-lg" 
-              style={{ width: '100%', marginTop: '0.5rem' }}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <span>Authenticating Credentials...</span>
-              ) : (
-                <>
-                  <span>Sign In as {selectedRole}</span>
-                  <ArrowRight size={17} />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Quick Demo Coordinator Logins Section */}
-          <div style={{ marginTop: '2rem', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '1.25rem' }}>
+          {successMsg && (
             <div style={{
+              padding: '0.75rem 0.9rem',
+              background: 'var(--success-bg)',
+              border: '1px solid var(--success-border)',
+              borderRadius: '6px',
+              color: 'var(--success-text)',
+              fontSize: '0.8125rem',
+              marginBottom: '1.25rem',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: '0.75rem'
+              gap: '0.5rem'
             }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-subtle)', textTransform: 'uppercase' }}>
-                Quick 1-Click Coordinator Sign-In
-              </span>
-              <span style={{ fontSize: '0.7rem', color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Sparkles size={12} /> Instant Access
-              </span>
+              <CheckCircle2 size={16} style={{ flexShrink: 0 }} />
+              <div>{successMsg}</div>
             </div>
+          )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.6rem' }}>
-              {users.map(u => (
-                <button
-                  key={u.id}
-                  type="button"
-                  onClick={() => handleQuickLogin(u)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.6rem',
-                    background: '#151e30',
-                    border: '1px solid var(--border-subtle)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: '0.55rem 0.75rem',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    color: 'var(--text-main)',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.5)';
-                    e.currentTarget.style.background = '#1a253c';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                    e.currentTarget.style.background = '#151e30';
-                  }}
-                >
-                  <img 
-                    src={u.avatar} 
-                    alt={u.name} 
-                    style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} 
+          {/* Sign In Form */}
+          {authMode === 'signin' && (
+            <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="form-label">Institutional Email Address</label>
+                <div style={{ position: 'relative' }}>
+                  <Mail size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type="email"
+                    required
+                    placeholder="coordinator@jspm.edu.in"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="form-input"
+                    style={{ paddingLeft: '38px' }}
                   />
-                  <div style={{ flex: 1, minWidth: 0, lineHeight: 1.25 }}>
-                    <div style={{ fontSize: '0.785rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {u.name}
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Password</label>
+                <div style={{ position: 'relative' }}>
+                  <Lock size={16} color="#94a3b8" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="Enter institutional password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="form-input"
+                    style={{ paddingLeft: '38px', paddingRight: '38px' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '10px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#94a3b8'
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn btn-primary btn-lg"
+                style={{ width: '100%', marginTop: '0.5rem' }}
+              >
+                {isLoading ? 'Authenticating...' : `Sign In to ${selectedRole}`}
+                {!isLoading && <ArrowRight size={16} />}
+              </button>
+            </form>
+          )}
+
+          {/* Register / Activation Form */}
+          {authMode === 'register' && (
+            <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label className="form-label">Full Name & Title</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Prof. John Doe"
+                  value={regFullName}
+                  onChange={(e) => setRegFullName(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div>
+                <label className="form-label">Institutional Email</label>
+                <input
+                  type="email"
+                  required
+                  placeholder="john.doe@college.edu.in"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  className="form-input"
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="form-label">Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Min 6 characters"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Confirm Password</label>
+                  <input
+                    type="password"
+                    required
+                    placeholder="Re-enter password"
+                    value={regConfirmPassword}
+                    onChange={(e) => setRegConfirmPassword(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label className="form-label">Designation</label>
+                  <input
+                    type="text"
+                    value={regDesignation}
+                    onChange={(e) => setRegDesignation(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Department</label>
+                  <input
+                    type="text"
+                    value={regDepartment}
+                    onChange={(e) => setRegDepartment(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="btn btn-primary btn-lg"
+                style={{ width: '100%', marginTop: '0.5rem' }}
+              >
+                {isLoading ? 'Creating Account...' : `Register & Activate as ${selectedRole}`}
+              </button>
+            </form>
+          )}
+
+          {/* Quick Demo Credentials Assistant */}
+          <div style={{ marginTop: '1.5rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9', textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowDemoCredentials(!showDemoCredentials)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--brand-maroon)',
+                fontSize: '0.785rem',
+                fontWeight: 600,
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              {showDemoCredentials ? 'Hide Quick Sign-In Helpers' : 'Show Demo Account Quick-Fill'}
+            </button>
+
+            {showDemoCredentials && (
+              <div style={{
+                marginTop: '0.75rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                textAlign: 'left'
+              }}>
+                {users.map(u => (
+                  <div
+                    key={u.id}
+                    onClick={() => quickFill(u)}
+                    style={{
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '6px',
+                      background: '#f8fafc',
+                      border: '1px solid #e2e8f0',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      transition: 'background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = '#f8fafc'}
+                  >
+                    <div>
+                      <div style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#1e293b' }}>{u.name}</div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{u.email}</div>
                     </div>
-                    <div style={{
-                      fontSize: '0.68rem',
-                      fontWeight: 600,
-                      color: u.role === 'Admin' ? '#f59e0b' : u.role === 'Activity Coordinator' ? '#06b6d4' : '#818cf8'
-                    }}>
-                      {u.role}
-                    </div>
+                    <span className="badge badge-neutral" style={{ fontSize: '0.68rem' }}>{u.role}</span>
                   </div>
-                </button>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+export default Login;

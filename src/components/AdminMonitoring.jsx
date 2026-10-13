@@ -13,7 +13,8 @@ import {
   TrendingUp, 
   CheckCheck,
   Building2,
-  Users
+  Users,
+  GraduationCap
 } from 'lucide-react';
 
 export function AdminMonitoring({ 
@@ -29,7 +30,7 @@ export function AdminMonitoring({
   const pendingApprovals = [];
   events.forEach(evt => {
     Object.entries(evt.documents || {}).forEach(([docKey, docVal]) => {
-      if (docVal.status === 'Pending Review' || docVal.status === 'In Review') {
+      if (docVal.status === 'Pending Review' || docVal.status === 'In Review' || docVal.status === 'Submitted') {
         pendingApprovals.push({
           eventId: evt.id,
           eventTitle: evt.title,
@@ -38,7 +39,8 @@ export function AdminMonitoring({
           docKey,
           docName: docKey === 'activityReport' ? 'Activity Report' : 
                    docKey === 'thankYouLetter' ? 'Thank-You Letter' : 
-                   docKey === 'attendanceSheet' ? 'Attendance Sheet' : docKey,
+                   docKey === 'attendanceSheet' ? 'Attendance Sheet' : 
+                   docKey === 'invitationLetter' ? 'Invitation Letter' : 'Flyer',
           generatedAt: docVal.generatedAt || 'Recently'
         });
       }
@@ -71,66 +73,92 @@ export function AdminMonitoring({
       {/* Top Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ShieldCheck size={24} color="#f59e0b" />
-            <h2 style={{ fontSize: '1.5rem' }}>Department Administration & Governance</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--brand-maroon-light)' }}>
+              <ShieldCheck size={24} color="var(--brand-maroon)" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', color: '#111827' }}>Department Administration & Governance</h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Prof. Vaishnavi Chitragar (HOD & Department Admin) • Department of Computer Engineering
+              </p>
+            </div>
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Prof. Vaishnavi Chitragar (HOD & Department Admin) • Computer Engineering Department
-          </p>
         </div>
 
         <button onClick={exportConsolidatedReport} className="btn btn-primary">
           <Download size={16} />
-          Export Consolidated Department Dossier (CSV)
+          Export Consolidated Dossier (CSV)
         </button>
       </div>
 
-      {/* KPI Overview Grid */}
+      {/* KPI Overview Grid with Reference Left Border Accents */}
       <div className="grid-4">
-        <div className="card" style={{ background: '#131c2e', borderTop: '3px solid #f59e0b' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Approvals Queue</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#f59e0b' }}>
+        <div className="stat-card border-l-amber">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Approvals Queue
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#b45309' }}>
             {pendingApprovals.length}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>Awaiting HOD sign-off</div>
+          <div style={{ fontSize: '0.75rem', color: '#b45309', marginTop: '0.35rem', fontWeight: 600 }}>
+            Awaiting Head of Dept sign-off
+          </div>
         </div>
 
-        <div className="card" style={{ background: '#131c2e', borderTop: '3px solid #10b981' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Students Reached</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#10b981' }}>
+        <div className="stat-card border-l-emerald">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Total Beneficiaries
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#059669' }}>
             {totalBeneficiaries}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '0.35rem' }}>Verified attendance records</div>
+          <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.35rem', fontWeight: 600 }}>
+            Verified student attendance records
+          </div>
         </div>
 
-        <div className="card" style={{ background: '#131c2e', borderTop: '3px solid #6366f1' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Academic Programs</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#6366f1' }}>
+        <div className="stat-card border-l-maroon">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Accredited Activities
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#111827' }}>
             {totalEvents}
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#818cf8', marginTop: '0.35rem' }}>Expert sessions & workshops</div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--brand-maroon)', marginTop: '0.35rem', fontWeight: 600 }}>
+            Curriculum enrichment sessions
+          </div>
         </div>
 
-        <div className="card" style={{ background: '#131c2e', borderTop: '3px solid #06b6d4' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Faculty Compliance</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#06b6d4' }}>
+        <div className="stat-card border-l-blue">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Documentation Compliance
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#0284c7' }}>
             88%
           </div>
-          <div style={{ fontSize: '0.75rem', color: '#67e8f9', marginTop: '0.35rem' }}>Documentation on-time</div>
+          <div style={{ fontSize: '0.75rem', color: '#0284c7', marginTop: '0.35rem', fontWeight: 600 }}>
+            NBA Criterion 3 & 5 alignment
+          </div>
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs Styled to Reference Style */}
       <div style={{
         display: 'flex',
-        gap: '0.5rem',
+        gap: '0.4rem',
         borderBottom: '1px solid var(--border-subtle)',
-        paddingBottom: '0.5rem'
+        paddingBottom: '0.35rem',
+        overflowX: 'auto'
       }}>
         <button
           onClick={() => setActiveTab('approvals')}
           className={`btn btn-sm ${activeTab === 'approvals' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{
+            background: activeTab === 'approvals' ? 'var(--brand-maroon)' : '#ffffff',
+            borderColor: activeTab === 'approvals' ? 'var(--brand-maroon)' : '#e5e7eb',
+            color: activeTab === 'approvals' ? '#ffffff' : '#4b5563'
+          }}
         >
           <CheckCheck size={15} />
           Pending Approvals ({pendingApprovals.length})
@@ -139,6 +167,11 @@ export function AdminMonitoring({
         <button
           onClick={() => setActiveTab('statistics')}
           className={`btn btn-sm ${activeTab === 'statistics' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{
+            background: activeTab === 'statistics' ? 'var(--brand-maroon)' : '#ffffff',
+            borderColor: activeTab === 'statistics' ? 'var(--brand-maroon)' : '#e5e7eb',
+            color: activeTab === 'statistics' ? '#ffffff' : '#4b5563'
+          }}
         >
           <BarChart3 size={15} />
           Department Analytics
@@ -147,6 +180,11 @@ export function AdminMonitoring({
         <button
           onClick={() => setActiveTab('audit')}
           className={`btn btn-sm ${activeTab === 'audit' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{
+            background: activeTab === 'audit' ? 'var(--brand-maroon)' : '#ffffff',
+            borderColor: activeTab === 'audit' ? 'var(--brand-maroon)' : '#e5e7eb',
+            color: activeTab === 'audit' ? '#ffffff' : '#4b5563'
+          }}
         >
           <History size={15} />
           Audit Trail & Activity Logs
@@ -155,6 +193,11 @@ export function AdminMonitoring({
         <button
           onClick={() => setActiveTab('users')}
           className={`btn btn-sm ${activeTab === 'users' ? 'btn-primary' : 'btn-secondary'}`}
+          style={{
+            background: activeTab === 'users' ? 'var(--brand-maroon)' : '#ffffff',
+            borderColor: activeTab === 'users' ? 'var(--brand-maroon)' : '#e5e7eb',
+            color: activeTab === 'users' ? '#ffffff' : '#4b5563'
+          }}
         >
           <Users size={15} />
           User Permissions & Roles
@@ -166,8 +209,8 @@ export function AdminMonitoring({
         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {pendingApprovals.length === 0 ? (
             <div className="card" style={{ textAlign: 'center', padding: '3rem 1rem' }}>
-              <CheckCircle size={36} color="#10b981" style={{ margin: '0 auto 0.75rem auto' }} />
-              <h3 style={{ fontSize: '1.1rem' }}>Approvals Queue is Clear!</h3>
+              <CheckCircle size={36} color="#059669" style={{ margin: '0 auto 0.75rem auto' }} />
+              <h3 style={{ fontSize: '1.15rem', color: '#111827' }}>Approvals Queue is Clear!</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                 All submitted activity reports and letters have been reviewed and approved.
               </p>
@@ -192,7 +235,7 @@ export function AdminMonitoring({
                     <span className="badge badge-info">{appr.category}</span>
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{appr.eventId}</span>
                   </div>
-                  <h3 style={{ fontSize: '1.1rem', color: '#ffffff' }}>
+                  <h3 style={{ fontSize: '1.1rem', color: '#111827', fontWeight: 700 }}>
                     {appr.docName}: {appr.eventTitle}
                   </h3>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
@@ -226,7 +269,7 @@ export function AdminMonitoring({
       {activeTab === 'statistics' && (
         <div className="animate-fade-in grid-2">
           <div className="card">
-            <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: '#818cf8' }}>
+            <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: 'var(--brand-maroon)' }}>
               Activities by Category
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -235,11 +278,11 @@ export function AdminMonitoring({
                 return (
                   <div key={cat}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.3rem' }}>
-                      <span style={{ fontWeight: 600 }}>{cat}</span>
+                      <span style={{ fontWeight: 600, color: '#111827' }}>{cat}</span>
                       <span style={{ color: 'var(--text-muted)' }}>{count} ({pct}%)</span>
                     </div>
-                    <div style={{ height: '8px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg, #4f46e5, #06b6d4)' }} />
+                    <div style={{ height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: 'var(--brand-maroon)' }} />
                     </div>
                   </div>
                 );
@@ -248,20 +291,20 @@ export function AdminMonitoring({
           </div>
 
           <div className="card">
-            <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: '#06b6d4' }}>
+            <h3 style={{ fontSize: '1.05rem', marginBottom: '1rem', color: '#0284c7' }}>
               Accreditation Compliance Checklist (NBA / NAAC)
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', fontSize: '0.85rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontWeight: 500 }}>
                 <CheckCircle size={16} /> All events mapped to Program Outcomes (POs/PSOs)
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontWeight: 500 }}>
                 <CheckCircle size={16} /> Official attendance rosters signed and archived
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}>
-                <CheckCircle size={16} /> Geotagged photographic records attached to activity reports
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontWeight: 500 }}>
+                <CheckCircle size={16} /> Multi-page attendance scans generated via Photo-to-PDF
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#059669', fontWeight: 500 }}>
                 <CheckCircle size={16} /> Resource person profiles & feedback ratings documented
               </div>
             </div>
@@ -272,7 +315,7 @@ export function AdminMonitoring({
       {/* Tab 3: Audit Trail */}
       {activeTab === 'audit' && (
         <div className="animate-fade-in card">
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#111827' }}>
             System Audit Trail & Modification History
           </h3>
           <div className="table-responsive">
@@ -290,14 +333,14 @@ export function AdminMonitoring({
                 {auditLogs.map(log => (
                   <tr key={log.id}>
                     <td style={{ fontSize: '0.785rem', color: 'var(--text-muted)' }}>{log.timestamp}</td>
-                    <td style={{ fontWeight: 600 }}>{log.user}</td>
+                    <td style={{ fontWeight: 600, color: '#111827' }}>{log.user}</td>
                     <td>
                       <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>{log.role}</span>
                     </td>
                     <td>
                       <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>{log.action}</span>
                     </td>
-                    <td style={{ fontSize: '0.85rem' }}>{log.details}</td>
+                    <td style={{ fontSize: '0.85rem', color: '#374151' }}>{log.details}</td>
                   </tr>
                 ))}
               </tbody>
@@ -309,7 +352,7 @@ export function AdminMonitoring({
       {/* Tab 4: User Roles & Permissions */}
       {activeTab === 'users' && (
         <div className="animate-fade-in card">
-          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: '#111827' }}>
             Department Users & Role Access Matrix
           </h3>
           <div className="table-responsive">
@@ -328,22 +371,22 @@ export function AdminMonitoring({
                   <tr key={u.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <img src={u.avatar} alt={u.name} style={{ width: '32px', height: '32px', borderRadius: '50%' }} />
-                        <span style={{ fontWeight: 600 }}>{u.name}</span>
+                        <img src={u.avatar} alt={u.name} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+                        <span style={{ fontWeight: 600, color: '#111827' }}>{u.name}</span>
                       </div>
                     </td>
                     <td>
                       <span className={`badge ${
                         u.role === 'Admin' ? 'badge-warning' :
-                        u.role === 'Activity Coordinator' ? 'badge-info' : 'badge-neutral'
+                        u.role === 'Activity Coordinator' ? 'badge-info' : 'badge-maroon'
                       }`}>
                         {u.role}
                       </span>
                     </td>
                     <td style={{ color: 'var(--text-muted)' }}>{u.designation}</td>
-                    <td style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{u.email}</td>
-                    <td style={{ fontSize: '0.785rem' }}>
-                      {u.role === 'Admin' ? 'Full Access, Approvals, User Mgmt' :
+                    <td style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#374151' }}>{u.email}</td>
+                    <td style={{ fontSize: '0.785rem', color: '#4b5563' }}>
+                      {u.role === 'Admin' ? 'Full Access, Approvals, User Governance' :
                        u.role === 'Activity Coordinator' ? 'Track Events, Reminders, Audit Reports' :
                        'Create Events, Generate Documents, Submit'}
                     </td>
@@ -357,3 +400,4 @@ export function AdminMonitoring({
     </div>
   );
 }
+export default AdminMonitoring;

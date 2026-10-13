@@ -14,6 +14,11 @@ import {
   INITIAL_NOTIFICATIONS, 
   INITIAL_AUDIT_LOGS 
 } from './data/mockData';
+import { eventsService } from './services/eventsService';
+import { authService } from './services/authService';
+import { notificationsService } from './services/notificationsService';
+import { auditService } from './services/auditService';
+import { isSupabaseConfigured } from './lib/supabase';
 
 export function App() {
   // Persistent state with localStorage fallback
@@ -49,6 +54,7 @@ export function App() {
   const [selectedEventId, setSelectedEventId] = useState('EVT-2026-001');
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
+  const [isLoadingData, setIsLoadingData] = useState(false);
 
   // Sync state to local storage
   useEffect(() => {
@@ -62,6 +68,57 @@ export function App() {
   useEffect(() => {
     localStorage.setItem('eventra_audit', JSON.stringify(auditLogs));
   }, [auditLogs]);
+
+  // Load from Supabase on mount / when auth is active
+  useEffect(() => {
+    async function loadRemoteData() {
+      if (isSupabaseConfigured) {
+        setIsLoadingData(true);
+        try {
+          const [fetchedEvents, fetchedNotifs, fetchedLogs] = await Promise.all([
+            eventsService.fetchEvents(),
+            notificationsService.fetchNotifications(currentUser?.id, currentUser?.role),
+            auditService.fetchAuditLogs()
+          ]);
+
+          if (fetchedEvents && fetchedEvents.length > 0) {
+            setEvents(fetchedEvents);
+            setSelectedEventId(fetchedEvents[0].id);
+          }
+          if (fetchedNotifs && fetchedNotifs.length > 0) {
+            setNotifications(fetchedNotifs);
+          }
+          if (fetchedLogs && fetchedLogs.length > 0) {
+            setAuditLogs(fetchedLogs);
+          }
+        } catch (err) {
+          console.warn('Error loading initial data from Supabase:', err);
+        } finally {
+          setIsLoadingData(false);
+        }
+      }
+    }
+
+    loadRemoteData();
+  }, [isAuthenticated, currentUser?.id, currentUser?.role]);
+
+  // Supabase Auth listener
+  useEffect(() => {
+    const unsubscribe = authService.onAuthStateChange((event, session, profile) => {
+      if (session && profile) {
+        setCurrentUser(profile);
+        setIsAuthenticated(true);
+        localStorage.setItem('eventra_auth', 'true');
+        localStorage.setItem('eventra_user_id', profile.id);
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        localStorage.removeItem('eventra_auth');
+        localStorage.removeItem('eventra_user_id');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -86,6 +143,12 @@ export function App() {
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
     };
     setAuditLogs(prev => [log, ...prev]);
+    auditService.logAction({
+      user: user.name,
+      role: user.role,
+      action: 'User Signed In',
+      details: `${user.name} authenticated into the ${user.role} portal.`
+    });
 
     // Landing view per role
     if (user.role === 'Activity Coordinator') {
@@ -110,16 +173,25 @@ export function App() {
     }
   }, [currentUser.role, activeTab]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await authService.signOut();
     setIsAuthenticated(false);
     localStorage.removeItem('eventra_auth');
+    localStorage.removeItem('eventra_user_id');
     showToast('Signed out of coordinator session.');
   };
 
   // Handlers
-  const handleSaveEvent = (newEvent) => {
+  const handleSaveEvent = async (newEvent) => {
     setEvents(prev => [newEvent, ...prev]);
     setSelectedEventId(newEvent.id);
+
+    // Save to Supabase
+    try {
+      await eventsService.createEvent(newEvent, currentUser);
+    } catch (err) {
+      console.warn('Could not persist event in Supabase:', err.message);
+    }
     
     // Create Audit Log
     const log = {
@@ -131,6 +203,14 @@ export function App() {
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
     };
     setAuditLogs(prev => [log, ...prev]);
+    auditService.logAction({
+      user: currentUser.name,
+      role: currentUser.role,
+      action: 'Created Event',
+      entityType: 'event',
+      entityId: newEvent.id,
+      details: `Created "${newEvent.title}" and auto-generated 5 official document templates.`
+    });
 
     // Create Notification
     const notif = {
@@ -145,6 +225,7 @@ export function App() {
       eventId: newEvent.id
     };
     setNotifications(prev => [notif, ...prev]);
+    notificationsService.createNotification(notif);
 
     showToast(`Event created! 5 document templates auto-generated for "${newEvent.title}".`);
     setActiveTab('documents');
@@ -173,6 +254,7 @@ export function App() {
       eventId: evt.id
     };
     setNotifications(prev => [notif, ...prev]);
+    notificationsService.createNotification(notif);
 
     const log = {
       id: `audit_${Date.now()}`,
@@ -183,11 +265,19 @@ export function App() {
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
     };
     setAuditLogs(prev => [log, ...prev]);
+    auditService.logAction({
+      user: currentUser.name,
+      role: currentUser.role,
+      action: 'Dispatched Reminder',
+      entityType: 'notification',
+      entityId: evt.id,
+      details: `Sent reminder to ${evt.facultyCoordinator} for ${evt.id} report submission.`
+    });
 
     showToast(`Reminder sent to ${evt.facultyCoordinator} for ${evt.id}!`);
   };
 
-  const handleApproveDocument = (eventId, docKey, decision) => {
+  const handleApproveDocument = async (eventId, docKey, decision) => {
     setEvents(prev => prev.map(evt => {
       if (evt.id === eventId) {
         const updatedDocs = {
@@ -210,6 +300,13 @@ export function App() {
       return evt;
     }));
 
+    // Update in Supabase
+    try {
+      await eventsService.updateDocumentStatus(eventId, docKey, decision);
+    } catch (err) {
+      console.warn('Could not update doc status in Supabase:', err.message);
+    }
+
     const log = {
       id: `audit_${Date.now()}`,
       user: currentUser.name,
@@ -219,12 +316,21 @@ export function App() {
       timestamp: new Date().toISOString().replace('T', ' ').substring(0, 16)
     };
     setAuditLogs(prev => [log, ...prev]);
+    auditService.logAction({
+      user: currentUser.name,
+      role: currentUser.role,
+      action: decision === 'Approved' ? 'Approved Document' : 'Revision Requested',
+      entityType: 'document',
+      entityId: eventId,
+      details: `${decision}: ${docKey} for event ${eventId} by ${currentUser.name}.`
+    });
 
     showToast(`Document ${decision === 'Approved' ? 'Approved & Signed' : 'Sent back for revisions'}!`);
   };
 
-  const handleMarkAllNotificationsRead = () => {
+  const handleMarkAllNotificationsRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+    await notificationsService.markAllRead(currentUser?.id, currentUser?.role);
   };
 
   const pendingApprovalsCount = events.reduce((count, evt) => {
@@ -273,12 +379,12 @@ export function App() {
           position: 'fixed',
           bottom: '24px',
           right: '24px',
-          background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
-          color: '#ffffff',
+          background: '#ffffff',
+          color: '#111827',
           padding: '0.85rem 1.4rem',
           borderRadius: 'var(--radius-md)',
-          border: '1px solid #4f46e5',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+          border: '1px solid var(--brand-maroon)',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
           zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
@@ -287,7 +393,7 @@ export function App() {
           fontWeight: 600,
           animation: 'fadeIn 0.25s ease'
         }}>
-          <span style={{ color: '#10b981' }}>✓</span> {toastMessage}
+          <span style={{ color: '#059669', fontWeight: 800 }}>✓</span> {toastMessage}
         </div>
       )}
 
@@ -303,6 +409,7 @@ export function App() {
         onOpenNotifications={() => setIsNotifOpen(true)}
         onCreateEvent={() => setActiveTab('create-event')}
         onLogout={handleLogout}
+        isSupabaseConfigured={isSupabaseConfigured}
       />
 
       {/* Slide-in Notifications Drawer */}
@@ -313,6 +420,25 @@ export function App() {
         onMarkAllRead={handleMarkAllNotificationsRead}
         onSelectEvent={handleSelectEvent}
       />
+
+      {/* Syncing indicator */}
+      {isLoadingData && (
+        <div style={{
+          background: 'var(--brand-maroon-light)',
+          borderBottom: '1px solid var(--brand-maroon-border)',
+          padding: '0.35rem 1.5rem',
+          fontSize: '0.75rem',
+          color: 'var(--brand-maroon)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          fontWeight: 600
+        }}>
+          <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: 'var(--brand-maroon)' }} />
+          Synchronizing events and documents with Supabase...
+        </div>
+      )}
 
       {/* View Switcher Main Container */}
       <main className="app-container" style={{ flex: 1 }}>
@@ -375,11 +501,11 @@ export function App() {
       {/* Footer */}
       <footer className="no-print" style={{
         borderTop: '1px solid var(--border-subtle)',
-        padding: '1.5rem',
+        padding: '1.25rem 1.5rem',
         textAlign: 'center',
         fontSize: '0.8rem',
         color: 'var(--text-muted)',
-        background: 'rgba(11, 15, 25, 0.8)'
+        background: '#ffffff'
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>

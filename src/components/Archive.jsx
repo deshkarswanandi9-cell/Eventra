@@ -10,7 +10,8 @@ import {
   Eye, 
   Image as ImageIcon,
   CheckCircle2,
-  ExternalLink
+  ExternalLink,
+  GraduationCap
 } from 'lucide-react';
 
 export function Archive({ events, onSelectEventAndDoc }) {
@@ -34,18 +35,22 @@ export function Archive({ events, onSelectEventAndDoc }) {
       {/* Top Banner */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <ArchiveIcon size={22} color="#818cf8" />
-            <h2 style={{ fontSize: '1.5rem' }}>Centralized Digital Event Archive</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ padding: '0.4rem', borderRadius: '8px', background: 'var(--brand-maroon-light)' }}>
+              <ArchiveIcon size={24} color="var(--brand-maroon)" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: '1.5rem', color: '#111827' }}>Centralized Digital Event Archive</h2>
+              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                Permanent repository of accredited departmental events, digital dossiers, and signed artifacts.
+              </p>
+            </div>
           </div>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Permanent repository of accredited departmental events, digital dossiers, and signed artifacts.
-          </p>
         </div>
       </div>
 
       {/* Filter Bar */}
-      <div className="card" style={{ padding: '1.25rem', background: '#111827' }}>
+      <div className="card" style={{ padding: '1.25rem', background: '#ffffff' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
             <Search size={16} color="var(--text-subtle)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -55,13 +60,13 @@ export function Archive({ events, onSelectEventAndDoc }) {
               value={search} 
               onChange={(e) => setSearch(e.target.value)} 
               className="form-input" 
-              style={{ paddingLeft: '36px' }}
+              style={{ paddingLeft: '38px', height: '38px' }}
             />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Year:</span>
-            <select className="form-select" style={{ width: 'auto' }} value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Year:</span>
+            <select className="form-select" style={{ width: 'auto', height: '38px', padding: '0.35rem 0.75rem' }} value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
               <option value="ALL">All Academic Years</option>
               <option value="2026-2027">2026-2027</option>
               <option value="2025-2026">2025-2026</option>
@@ -69,8 +74,8 @@ export function Archive({ events, onSelectEventAndDoc }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Semester:</span>
-            <select className="form-select" style={{ width: 'auto' }} value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Semester:</span>
+            <select className="form-select" style={{ width: 'auto', height: '38px', padding: '0.35rem 0.75rem' }} value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}>
               <option value="ALL">All Semesters</option>
               <option value="Odd">Odd Semester</option>
               <option value="Even">Even Semester</option>
@@ -87,12 +92,14 @@ export function Archive({ events, onSelectEventAndDoc }) {
           return (
             <div 
               key={evt.id}
-              className="card card-hover"
+              className="card"
               style={{
-                background: '#131c2e',
-                border: `1px solid ${isExpanded ? 'rgba(99, 102, 241, 0.4)' : 'var(--border-subtle)'}`,
+                background: '#ffffff',
+                border: `1px solid ${isExpanded ? 'var(--brand-maroon)' : 'var(--border-subtle)'}`,
+                borderLeft: `5px solid ${isExpanded ? 'var(--brand-maroon)' : '#cbd5e1'}`,
                 padding: 0,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                boxShadow: isExpanded ? 'var(--shadow-md)' : 'var(--shadow-sm)'
               }}
             >
               {/* Folder Row Header */}
@@ -103,7 +110,7 @@ export function Archive({ events, onSelectEventAndDoc }) {
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   cursor: 'pointer',
-                  background: isExpanded ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                  background: isExpanded ? 'var(--brand-maroon-light)' : 'transparent',
                   flexWrap: 'wrap',
                   gap: '1rem'
                 }}
@@ -113,13 +120,14 @@ export function Archive({ events, onSelectEventAndDoc }) {
                   <div style={{
                     width: '42px',
                     height: '42px',
-                    borderRadius: '10px',
-                    background: isExpanded ? 'linear-gradient(135deg, #4f46e5, #06b6d4)' : '#1e293b',
+                    borderRadius: '8px',
+                    background: isExpanded ? 'var(--brand-maroon)' : '#f1f5f9',
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    color: isExpanded ? '#ffffff' : 'var(--brand-maroon)'
                   }}>
-                    <Folder size={22} color={isExpanded ? '#ffffff' : '#818cf8'} />
+                    <Folder size={22} />
                   </div>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -127,17 +135,17 @@ export function Archive({ events, onSelectEventAndDoc }) {
                       <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>{evt.category}</span>
                       <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>{evt.status}</span>
                     </div>
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: '#ffffff', marginTop: '0.2rem' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#111827', marginTop: '0.2rem' }}>
                       {evt.title}
                     </h3>
                     <div style={{ fontSize: '0.785rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      Date: {evt.date} • Speaker: <strong>{evt.speaker.name}</strong> ({evt.speaker.organization}) • Coord: {evt.facultyCoordinator}
+                      Date: {evt.date} • Speaker: <strong>{evt.speaker.name}</strong> ({evt.speaker.organization}) • Coordinator: {evt.facultyCoordinator}
                     </div>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--brand-maroon)', fontWeight: 600 }}>
                     {isExpanded ? 'Hide Dossier ▲' : 'Open Dossier ▼'}
                   </span>
                 </div>
@@ -147,11 +155,11 @@ export function Archive({ events, onSelectEventAndDoc }) {
               {isExpanded && (
                 <div style={{
                   padding: '1.25rem 1.5rem 1.5rem 1.5rem',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-                  background: 'rgba(0, 0, 0, 0.2)'
+                  borderTop: '1px solid var(--border-subtle)',
+                  background: '#f8fafc'
                 }}>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.85rem', textTransform: 'uppercase' }}>
-                    Document Dossier & Artifact Files:
+                  <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    Accredited Artifacts & Document Suite:
                   </div>
 
                   <div className="grid-3" style={{ gap: '0.75rem' }}>
@@ -159,32 +167,33 @@ export function Archive({ events, onSelectEventAndDoc }) {
                     <div 
                       onClick={() => onSelectEventAndDoc(evt.id, 'flyer')}
                       style={{
-                        background: '#182238',
-                        padding: '0.85rem',
+                        background: '#ffffff',
+                        padding: '0.85rem 1rem',
                         borderRadius: 'var(--radius-md)',
                         border: '1px solid var(--border-subtle)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        transition: 'border-color 0.15s ease'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <ImageIcon size={18} color="#818cf8" />
+                        <ImageIcon size={18} color="var(--brand-maroon)" />
                         <div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: 600 }}>1. Event Flyer.pdf</div>
-                          <div style={{ fontSize: '0.68rem', color: '#10b981' }}>✓ High Resolution</div>
+                          <div style={{ fontSize: '0.825rem', fontWeight: 600, color: '#111827' }}>1. Event Flyer.pdf</div>
+                          <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>✓ High Resolution</div>
                         </div>
                       </div>
-                      <Eye size={15} color="var(--text-muted)" />
+                      <Eye size={15} color="var(--text-subtle)" />
                     </div>
 
                     {/* Invitation Letter */}
                     <div 
                       onClick={() => onSelectEventAndDoc(evt.id, 'invitation')}
                       style={{
-                        background: '#182238',
-                        padding: '0.85rem',
+                        background: '#ffffff',
+                        padding: '0.85rem 1rem',
                         borderRadius: 'var(--radius-md)',
                         border: '1px solid var(--border-subtle)',
                         display: 'flex',
@@ -194,21 +203,21 @@ export function Archive({ events, onSelectEventAndDoc }) {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <FileText size={18} color="#06b6d4" />
+                        <FileText size={18} color="#0284c7" />
                         <div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: 600 }}>2. Invitation Letter.pdf</div>
-                          <div style={{ fontSize: '0.68rem', color: '#10b981' }}>Ref: {evt.documents?.invitationLetter?.refNo || 'Generated'}</div>
+                          <div style={{ fontSize: '0.825rem', fontWeight: 600, color: '#111827' }}>2. Invitation Letter.pdf</div>
+                          <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>Ref: {evt.documents?.invitationLetter?.refNo || 'Generated'}</div>
                         </div>
                       </div>
-                      <Eye size={15} color="var(--text-muted)" />
+                      <Eye size={15} color="var(--text-subtle)" />
                     </div>
 
                     {/* Attendance Sheet */}
                     <div 
                       onClick={() => onSelectEventAndDoc(evt.id, 'attendance')}
                       style={{
-                        background: '#182238',
-                        padding: '0.85rem',
+                        background: '#ffffff',
+                        padding: '0.85rem 1rem',
                         borderRadius: 'var(--radius-md)',
                         border: '1px solid var(--border-subtle)',
                         display: 'flex',
@@ -218,21 +227,21 @@ export function Archive({ events, onSelectEventAndDoc }) {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <FileText size={18} color="#34d399" />
+                        <FileText size={18} color="#059669" />
                         <div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: 600 }}>3. Attendance Sheet.pdf</div>
-                          <div style={{ fontSize: '0.68rem', color: '#10b981' }}>{evt.participants.actualAttended || 72} Verified Signatures</div>
+                          <div style={{ fontSize: '0.825rem', fontWeight: 600, color: '#111827' }}>3. Attendance Sheet.pdf</div>
+                          <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>{evt.participants.actualAttended || 72} Verified Records</div>
                         </div>
                       </div>
-                      <Eye size={15} color="var(--text-muted)" />
+                      <Eye size={15} color="var(--text-subtle)" />
                     </div>
 
                     {/* Activity Report */}
                     <div 
                       onClick={() => onSelectEventAndDoc(evt.id, 'report')}
                       style={{
-                        background: '#182238',
-                        padding: '0.85rem',
+                        background: '#ffffff',
+                        padding: '0.85rem 1rem',
                         borderRadius: 'var(--radius-md)',
                         border: '1px solid var(--border-subtle)',
                         display: 'flex',
@@ -242,21 +251,21 @@ export function Archive({ events, onSelectEventAndDoc }) {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <FileText size={18} color="#f59e0b" />
+                        <FileText size={18} color="var(--brand-maroon)" />
                         <div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: 600 }}>4. Activity Report (Dossier).pdf</div>
-                          <div style={{ fontSize: '0.68rem', color: '#38bdf8' }}>NBA/NAAC Mapped</div>
+                          <div style={{ fontSize: '0.825rem', fontWeight: 600, color: '#111827' }}>4. Activity Report.pdf</div>
+                          <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>NBA Criteria 3 & 5 Mapped</div>
                         </div>
                       </div>
-                      <Eye size={15} color="var(--text-muted)" />
+                      <Eye size={15} color="var(--text-subtle)" />
                     </div>
 
                     {/* Thank You Letter */}
                     <div 
                       onClick={() => onSelectEventAndDoc(evt.id, 'thankyou')}
                       style={{
-                        background: '#182238',
-                        padding: '0.85rem',
+                        background: '#ffffff',
+                        padding: '0.85rem 1rem',
                         borderRadius: 'var(--radius-md)',
                         border: '1px solid var(--border-subtle)',
                         display: 'flex',
@@ -266,37 +275,13 @@ export function Archive({ events, onSelectEventAndDoc }) {
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <FileText size={18} color="#ec4899" />
+                        <FileText size={18} color="#b45309" />
                         <div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: 600 }}>5. Thank-You Letter.pdf</div>
-                          <div style={{ fontSize: '0.68rem', color: '#10b981' }}>Signed & Dispatched</div>
+                          <div style={{ fontSize: '0.825rem', fontWeight: 600, color: '#111827' }}>5. Thank-You Letter.pdf</div>
+                          <div style={{ fontSize: '0.7rem', color: '#059669', fontWeight: 600 }}>Signed & Dispatched</div>
                         </div>
                       </div>
-                      <Eye size={15} color="var(--text-muted)" />
-                    </div>
-
-                    {/* Photographs Directory */}
-                    <div 
-                      style={{
-                        background: '#182238',
-                        padding: '0.85rem',
-                        borderRadius: 'var(--radius-md)',
-                        border: '1px solid var(--border-subtle)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <ImageIcon size={18} color="#a855f7" />
-                        <div>
-                          <div style={{ fontSize: '0.825rem', fontWeight: 600 }}>Event Photographs Folder/</div>
-                          <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                            {evt.eventPhotos?.length || 2} Geotagged high-res images
-                          </div>
-                        </div>
-                      </div>
-                      <CheckCircle2 size={15} color="#10b981" />
+                      <Eye size={15} color="var(--text-subtle)" />
                     </div>
                   </div>
                 </div>
@@ -308,3 +293,4 @@ export function Archive({ events, onSelectEventAndDoc }) {
     </div>
   );
 }
+export default Archive;

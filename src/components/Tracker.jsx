@@ -10,7 +10,9 @@ import {
   CheckCircle2, 
   ArrowUpRight, 
   Send,
-  Eye
+  Eye,
+  Award,
+  Calendar
 } from 'lucide-react';
 
 export function Tracker({ 
@@ -35,7 +37,7 @@ export function Tracker({
     return matchesSearch && matchesCat && matchesStatus && matchesCoord;
   });
 
-  // Calculate Metrics
+  // Calculate Real Database Metrics
   const totalEvents = events.length;
   const completedEvents = events.filter(e => e.status === 'Completed').length;
   const overdueReports = events.filter(e => 
@@ -43,24 +45,24 @@ export function Tracker({
     (e.status === 'Documents Overdue')
   ).length;
   const pendingReview = events.filter(e => 
-    Object.values(e.documents || {}).some(d => d.status === 'Pending Review')
+    Object.values(e.documents || {}).some(d => d.status === 'Pending Review' || d.status === 'In Review')
   ).length;
 
   const getDocStatusBadge = (doc) => {
     if (!doc || !doc.generated) {
-      return <span className="badge badge-neutral" style={{ fontSize: '0.7rem' }}>Pending</span>;
+      return <span className="badge badge-neutral" style={{ fontSize: '0.6875rem' }}>Draft Pending</span>;
     }
     const s = doc.status?.toLowerCase() || '';
     if (s.includes('approved')) {
-      return <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>✓ Approved</span>;
+      return <span className="badge badge-success" style={{ fontSize: '0.6875rem' }}>✓ Approved</span>;
     }
-    if (s.includes('pending')) {
-      return <span className="badge badge-warning" style={{ fontSize: '0.7rem' }}>In Review</span>;
+    if (s.includes('pending') || s.includes('review') || s.includes('submitted')) {
+      return <span className="badge badge-warning" style={{ fontSize: '0.6875rem' }}>In Review</span>;
     }
     if (s.includes('overdue')) {
-      return <span className="badge badge-danger" style={{ fontSize: '0.7rem' }}>⚠ Overdue</span>;
+      return <span className="badge badge-danger" style={{ fontSize: '0.6875rem' }}>⚠ Overdue</span>;
     }
-    return <span className="badge badge-info" style={{ fontSize: '0.7rem' }}>{doc.status}</span>;
+    return <span className="badge badge-info" style={{ fontSize: '0.6875rem' }}>{doc.status}</span>;
   };
 
   return (
@@ -69,47 +71,73 @@ export function Tracker({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckSquare size={22} color="#06b6d4" />
-            <h2 style={{ fontSize: '1.5rem' }}>Activity Coordinator Lifecycle Tracker</h2>
+            <CheckSquare size={24} color="var(--brand-maroon)" />
+            <h2 style={{ fontSize: '1.5rem', color: '#111827' }}>Activity Coordinator Lifecycle Tracker</h2>
           </div>
           <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-            Monitor event documentation checklists, identify missing files, and dispatch automated follow-up reminders.
+            Monitor event documentation checklists, verify attendance submissions, and dispatch automated follow-up reminders.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span className="badge badge-info">Logged in as: {currentUser.name}</span>
+          <span className="badge badge-maroon" style={{ fontWeight: 600 }}>
+            Logged in as: {currentUser.name} ({currentUser.role})
+          </span>
         </div>
       </div>
 
-      {/* Metric Cards Banner */}
+      {/* Metric Cards Banner with Reference Left-Border Pattern */}
       <div className="grid-4">
-        <div className="card" style={{ background: '#131c2e', borderLeft: '4px solid #3b82f6' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Department Events</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#ffffff' }}>{totalEvents}</div>
-          <div style={{ fontSize: '0.75rem', color: '#60a5fa', marginTop: '0.35rem' }}>Across Odd Sem 2026</div>
+        <div className="stat-card border-l-maroon">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Department Events
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#111827' }}>
+            {totalEvents}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: 'var(--brand-maroon)', marginTop: '0.35rem', fontWeight: 600 }}>
+            Academic Year 2026-2027
+          </div>
         </div>
 
-        <div className="card" style={{ background: '#131c2e', borderLeft: '4px solid #10b981' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fully Archived & Complete</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#10b981' }}>{completedEvents}</div>
-          <div style={{ fontSize: '0.75rem', color: '#34d399', marginTop: '0.35rem' }}>All 5 documents approved</div>
+        <div className="stat-card border-l-emerald">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Fully Complete & Archived
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#059669' }}>
+            {completedEvents}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#059669', marginTop: '0.35rem', fontWeight: 600 }}>
+            All 5 documents verified & signed
+          </div>
         </div>
 
-        <div className="card" style={{ background: '#131c2e', borderLeft: '4px solid #f59e0b' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Documents Pending Review</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#f59e0b' }}>{pendingReview}</div>
-          <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginTop: '0.35rem' }}>Awaiting Admin signature</div>
+        <div className="stat-card border-l-amber">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Documents In Review
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#b45309' }}>
+            {pendingReview}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#b45309', marginTop: '0.35rem', fontWeight: 600 }}>
+            Awaiting HOD verification
+          </div>
         </div>
 
-        <div className="card" style={{ background: '#131c2e', borderLeft: '4px solid #ef4444' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Overdue Submissions</div>
-          <div style={{ fontSize: '1.8rem', fontWeight: 800, marginTop: '0.25rem', color: '#ef4444' }}>{overdueReports}</div>
-          <div style={{ fontSize: '0.75rem', color: '#f87171', marginTop: '0.35rem' }}>Requires immediate follow-up</div>
+        <div className="stat-card border-l-red">
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.05em' }}>
+            Overdue Submissions
+          </div>
+          <div style={{ fontSize: '1.85rem', fontWeight: 800, marginTop: '0.25rem', color: '#dc2626' }}>
+            {overdueReports}
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#dc2626', marginTop: '0.35rem', fontWeight: 600 }}>
+            Actionable reminder required
+          </div>
         </div>
       </div>
 
       {/* Filters & Search Control Bar */}
-      <div className="card" style={{ padding: '1.25rem', background: '#111827' }}>
+      <div className="card" style={{ padding: '1.25rem' }}>
         <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
             <Search size={16} color="var(--text-subtle)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
@@ -119,13 +147,13 @@ export function Tracker({
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)} 
               className="form-input" 
-              style={{ paddingLeft: '36px' }}
+              style={{ paddingLeft: '38px', height: '38px' }}
             />
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Category:</span>
-            <select className="form-select" style={{ width: 'auto' }} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Category:</span>
+            <select className="form-select" style={{ width: 'auto', height: '38px', padding: '0.35rem 0.75rem' }} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
               <option value="ALL">All Categories</option>
               <option value="Expert Session">Expert Session</option>
               <option value="Workshop">Workshop</option>
@@ -135,8 +163,8 @@ export function Tracker({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Status:</span>
-            <select className="form-select" style={{ width: 'auto' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Status:</span>
+            <select className="form-select" style={{ width: 'auto', height: '38px', padding: '0.35rem 0.75rem' }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="ALL">All Statuses</option>
               <option value="Completed">Completed</option>
               <option value="In Review">In Review</option>
@@ -146,8 +174,8 @@ export function Tracker({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Coordinator:</span>
-            <select className="form-select" style={{ width: 'auto' }} value={coordinatorFilter} onChange={(e) => setCoordinatorFilter(e.target.value)}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Coordinator:</span>
+            <select className="form-select" style={{ width: 'auto', height: '38px', padding: '0.35rem 0.75rem' }} value={coordinatorFilter} onChange={(e) => setCoordinatorFilter(e.target.value)}>
               <option value="ALL">All Faculty</option>
               <option value="Sneha Kulkarni">Prof. Sneha Kulkarni</option>
               <option value="Arvind Patil">Prof. Arvind Patil</option>
@@ -162,14 +190,14 @@ export function Tracker({
         <table className="custom-table">
           <thead>
             <tr>
-              <th style={{ width: '22%' }}>Event Details</th>
-              <th style={{ width: '13%' }}>Coordinator</th>
-              <th style={{ textAlign: 'center' }}>Flyer</th>
-              <th style={{ textAlign: 'center' }}>Invitation</th>
-              <th style={{ textAlign: 'center' }}>Attendance</th>
-              <th style={{ textAlign: 'center' }}>Activity Report</th>
-              <th style={{ textAlign: 'center' }}>Thank You</th>
-              <th style={{ textAlign: 'center', width: '15%' }}>Action & Follow-up</th>
+              <th style={{ width: '24%' }}>Event Details</th>
+              <th style={{ width: '14%' }}>Coordinator</th>
+              <th style={{ textAlign: 'center', width: '10%' }}>Flyer</th>
+              <th style={{ textAlign: 'center', width: '10%' }}>Invitation</th>
+              <th style={{ textAlign: 'center', width: '12%' }}>Attendance</th>
+              <th style={{ textAlign: 'center', width: '12%' }}>Report</th>
+              <th style={{ textAlign: 'center', width: '10%' }}>Thank You</th>
+              <th style={{ textAlign: 'center', width: '14%' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -177,23 +205,23 @@ export function Tracker({
               const isOverdue = evt.status === 'Documents Overdue' || evt.documents?.activityReport?.status?.includes('Overdue');
 
               return (
-                <tr key={evt.id} style={{ background: isOverdue ? 'rgba(239, 68, 68, 0.04)' : undefined }}>
+                <tr key={evt.id} style={{ background: isOverdue ? '#fff5f5' : undefined }}>
                   <td>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-                      <span className="badge badge-neutral" style={{ fontSize: '0.68rem' }}>{evt.id}</span>
-                      <span className="badge badge-info" style={{ fontSize: '0.68rem' }}>{evt.category}</span>
+                      <span className="badge badge-neutral" style={{ fontSize: '0.6875rem' }}>{evt.id}</span>
+                      <span className="badge badge-info" style={{ fontSize: '0.6875rem' }}>{evt.category}</span>
                     </div>
-                    <div style={{ fontWeight: 600, color: '#ffffff', fontSize: '0.9rem' }}>
+                    <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.875rem' }}>
                       {evt.title}
                     </div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      Date: {evt.date} • Speaker: {evt.speaker.name}
+                      Date: {evt.date} • Speaker: <strong>{evt.speaker.name}</strong>
                     </div>
                   </td>
 
                   <td>
-                    <div style={{ fontWeight: 600 }}>{evt.facultyCoordinator}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{evt.organizingBody}</div>
+                    <div style={{ fontWeight: 600, fontSize: '0.85rem', color: '#1f2937' }}>{evt.facultyCoordinator}</div>
+                    <div style={{ fontSize: '0.72rem', color: 'var(--text-subtle)' }}>{evt.organizingBody}</div>
                   </td>
 
                   {/* Document Checklist Items */}
@@ -222,14 +250,14 @@ export function Tracker({
                         title="Open Document Centre"
                       >
                         <Eye size={13} />
-                        Inspect Docs
+                        Inspect
                       </button>
 
                       {isOverdue && (
                         <button 
                           onClick={() => onSendReminder(evt)}
                           className="btn btn-danger btn-sm"
-                          title="Send Urgent Reminder"
+                          title="Dispatch Urgent Documentation Follow-up"
                         >
                           <Send size={13} />
                           Remind
@@ -246,3 +274,4 @@ export function Tracker({
     </div>
   );
 }
+export default Tracker;

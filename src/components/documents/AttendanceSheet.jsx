@@ -1,10 +1,33 @@
 import React, { useState } from 'react';
-import { Printer, CheckCircle, XCircle, Users, Download, Filter } from 'lucide-react';
+import { 
+  Printer, 
+  CheckCircle, 
+  XCircle, 
+  Users, 
+  Download, 
+  Filter, 
+  Save, 
+  Check,
+  Camera,
+  ClipboardList
+} from 'lucide-react';
 import { INITIAL_STUDENTS } from '../../data/mockData';
+import { attendanceService } from '../../services/attendanceService';
+import { AttendancePhotoToPdf } from './AttendancePhotoToPdf';
 
-export function AttendanceSheet({ event, onPrint }) {
+export function AttendanceSheet({ 
+  event, 
+  events = [], 
+  onSelectEvent, 
+  currentUser, 
+  onUpdateEventDocStatus, 
+  onPrint 
+}) {
+  const [activeView, setActiveView] = useState('photo_pdf'); // 'photo_pdf' or 'roster'
   // Filter students based on event's target years or allow full roster
   const [selectedDiv, setSelectedDiv] = useState('ALL');
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [attendance, setAttendance] = useState(() => {
     const init = {};
     INITIAL_STUDENTS.forEach((s, idx) => {
@@ -47,24 +70,119 @@ export function AttendanceSheet({ event, onPrint }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Attendance_${event.id}_${event.title.substring(0, 15)}.csv`;
+    a.download = `Attendance_${event?.id || 'EVT'}_${(event?.title || 'Event').substring(0, 15)}.csv`;
     a.click();
+  };
+
+  const handleSaveToDatabase = async () => {
+    if (!event) return;
+    setIsSaving(true);
+    setSaveSuccess(false);
+
+    const recordList = INITIAL_STUDENTS.map(s => ({
+      rollNo: s.rollNo,
+      name: s.name,
+      year: s.year,
+      division: s.division,
+      status: Boolean(attendance[s.id])
+    }));
+
+    const ok = await attendanceService.saveAttendance(event.id, recordList);
+    setIsSaving(false);
+    if (ok) {
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-      {/* Controls Bar */}
+      {/* Attendance Mode Switcher */}
       <div className="no-print" style={{
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: '#151e30',
-        padding: '0.75rem 1.25rem',
+        background: '#f1f5f9',
+        padding: '0.35rem',
         borderRadius: 'var(--radius-md)',
         border: '1px solid var(--border-subtle)',
-        flexWrap: 'wrap',
-        gap: '0.75rem'
+        gap: '0.4rem'
       }}>
+        <button
+          type="button"
+          onClick={() => setActiveView('photo_pdf')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.45rem',
+            padding: '0.65rem 1rem',
+            borderRadius: 'var(--radius-sm)',
+            border: 'none',
+            background: activeView === 'photo_pdf' ? 'var(--brand-maroon)' : 'transparent',
+            color: activeView === 'photo_pdf' ? '#ffffff' : 'var(--text-muted)',
+            fontWeight: activeView === 'photo_pdf' ? 700 : 500,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: activeView === 'photo_pdf' ? '0 1px 3px rgba(138, 58, 58, 0.25)' : 'none'
+          }}
+        >
+          <Camera size={16} color={activeView === 'photo_pdf' ? '#ffffff' : 'currentColor'} />
+          Upload Attendance Sheet (Photo → Multi-Page PDF)
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveView('roster')}
+          style={{
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.45rem',
+            padding: '0.65rem 1rem',
+            borderRadius: 'var(--radius-sm)',
+            border: 'none',
+            background: activeView === 'roster' ? 'var(--brand-maroon)' : 'transparent',
+            color: activeView === 'roster' ? '#ffffff' : 'var(--text-muted)',
+            fontWeight: activeView === 'roster' ? 700 : 500,
+            fontSize: '0.85rem',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            boxShadow: activeView === 'roster' ? '0 1px 3px rgba(138, 58, 58, 0.25)' : 'none'
+          }}
+        >
+          <ClipboardList size={16} color={activeView === 'roster' ? '#ffffff' : 'currentColor'} />
+          Blank Official Sheet & Digital Student Roster
+        </button>
+      </div>
+
+      {/* VIEW 1: UPLOAD ATTENDANCE SHEET PHOTO TO PDF */}
+      {activeView === 'photo_pdf' && (
+        <AttendancePhotoToPdf 
+          event={event}
+          events={events}
+          onSelectEvent={onSelectEvent}
+          currentUser={currentUser}
+          onUpdateEventDocStatus={onUpdateEventDocStatus}
+        />
+      )}
+
+      {/* VIEW 2: DIGITAL ROSTER & OFFICIAL BLANK SHEET */}
+      {activeView === 'roster' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          {/* Controls Bar */}
+          <div className="no-print" style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            background: '#ffffff',
+            padding: '0.75rem 1.25rem',
+            borderRadius: 'var(--radius-md)',
+            border: '1px solid var(--border-subtle)',
+            flexWrap: 'wrap',
+            gap: '0.75rem'
+          }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <Filter size={15} color="var(--text-muted)" />
@@ -91,6 +209,16 @@ export function AttendanceSheet({ event, onPrint }) {
           <button onClick={() => markAll(false)} className="btn btn-secondary btn-sm">
             <XCircle size={14} color="#ef4444" />
             Clear
+          </button>
+
+          <button 
+            onClick={handleSaveToDatabase} 
+            disabled={isSaving}
+            className={`btn btn-sm ${saveSuccess ? 'btn-success' : 'btn-secondary'}`}
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+          >
+            {saveSuccess ? <Check size={14} color="#10b981" /> : <Save size={14} color="#818cf8" />}
+            {isSaving ? 'Saving...' : saveSuccess ? 'Saved to DB!' : 'Save Attendance to DB'}
           </button>
         </div>
 
@@ -258,12 +386,14 @@ export function AttendanceSheet({ event, onPrint }) {
 
           <div style={{ textAlign: 'center', width: '220px' }}>
             <div style={{ borderTop: '1px solid #334155', paddingTop: '4px', fontWeight: 'bold' }}>
-              {event.adminSupervisor}
+              {event?.adminSupervisor || 'Head of Department'}
             </div>
             <div style={{ fontSize: '8.5pt', color: '#475569' }}>Head of Department</div>
           </div>
         </div>
       </div>
+      </div>
+      )}
     </div>
   );
 }

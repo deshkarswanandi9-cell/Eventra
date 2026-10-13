@@ -132,24 +132,24 @@ export function EventForm({ currentUser, onSaveEvent, onCancel }) {
   };
 
   return (
-    <div className="card animate-fade-in" style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
+    <div className="card animate-fade-in" style={{ maxWidth: '960px', margin: '0 auto', padding: '2rem', borderLeft: '5px solid var(--brand-maroon)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Sparkles size={20} color="#818cf8" />
-            <h2 style={{ fontSize: '1.4rem' }}>Create New Academic Activity / Event</h2>
+            <Sparkles size={20} color="var(--brand-maroon)" />
+            <h2 style={{ fontSize: '1.4rem', color: '#111827', fontWeight: 800 }}>Create New Academic Activity / Event</h2>
           </div>
           <p style={{ fontSize: '0.825rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
             Enter details once. Eventra automatically generates the Flyer, Invitation Letter, Attendance Sheet, Report, and Thank-You Letter.
           </p>
         </div>
-        <span className="badge badge-info">Coordinator: {currentUser.name}</span>
+        <span className="badge badge-maroon">Coordinator: {currentUser.name}</span>
       </div>
 
       <form onSubmit={handleSubmit}>
         {/* Basic Event Information */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <h3 style={{ fontSize: '1rem', color: '#818cf8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <h3 style={{ fontSize: '1rem', color: 'var(--brand-maroon)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
             <BookOpen size={16} /> 1. Event Identification & Category
           </h3>
           
@@ -200,7 +200,7 @@ export function EventForm({ currentUser, onSaveEvent, onCancel }) {
 
         {/* Date, Time & Venue */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <h3 style={{ fontSize: '1rem', color: '#818cf8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <h3 style={{ fontSize: '1rem', color: 'var(--brand-maroon)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
             <Calendar size={16} /> 2. Schedule, Timing & Location
           </h3>
 
@@ -245,7 +245,7 @@ export function EventForm({ currentUser, onSaveEvent, onCancel }) {
 
         {/* Resource Person / Speaker Details */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <h3 style={{ fontSize: '1rem', color: '#818cf8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <h3 style={{ fontSize: '1rem', color: 'var(--brand-maroon)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
             <User size={16} /> 3. Resource Person / Guest Details
           </h3>
 
@@ -350,7 +350,7 @@ export function EventForm({ currentUser, onSaveEvent, onCancel }) {
 
         {/* Target Students & Objectives */}
         <div style={{ marginBottom: '1.75rem' }}>
-          <h3 style={{ fontSize: '1rem', color: '#818cf8', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <h3 style={{ fontSize: '1rem', color: 'var(--brand-maroon)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700 }}>
             <Users size={16} /> 4. Participants, Objectives & POs
           </h3>
 
